@@ -179,7 +179,7 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
         k25 = current_k25
         _, e, x, t  = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
         Rb = e/(lamb_f * 1000)
-        plt.plot(t, Rb[:, int(len(x)/2)], label=f'k25 = {k25}', linewidth=thickness)
+        plt.plot(t, Rb[:, int(len(x)/2)], label=fr'$k25 = {k25}\,\mathrm{{W/m^2/K/s}}$', linewidth=thickness)
 
     plt.ylabel(r'$R (m^2 K/kW)$')
     plt.xlabel('t (jours)')
@@ -190,19 +190,38 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     k25 = 1100
     plt.plot(time_nebot, R_nebot, 's')
 
-    # Ea tests
+    # E tests
     list_E = [30000, 40000, 50000]
     for current_E in list_E:
         E = current_E
         _, e, x, t  = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
         Rb = e/(lamb_f * 1000)
-        plt.plot(t, Rb[:, int(len(x)/2)], label=f'E = {E}', linewidth=thickness)
+        plt.plot(t, Rb[:, int(len(x)/2)], label=fr'$E = {E}\,\mathrm{{J/mol}}$', linewidth=thickness)
 
     plt.ylabel(r'$R (m^2 K/kW)$')
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
     save_figure('plot_nebot_2', show=SHOW_PLOTS)
+
+    E = 40000
+    plt.figure()
+    plt.plot(time_nebot, R_nebot, 's')
+
+    # e0 tests
+    list_e0 = [5e-7, 2e-6, 8e-6]
+    for current_e0 in list_e0:
+        e0 = current_e0
+        _, e, x, t = simulate_T_e(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
+        Rb = e / (lamb_f * 1000)
+        plt.plot(t, Rb[:, int(len(x)/2)], label=fr'$e_0 = {e0}\,\mathrm{{m}}$', linewidth=thickness)
+
+    plt.ylabel(r'$R (m^2 K/kW)$')
+    plt.xlabel('t (jours)')
+    plt.legend(loc='center left', fontsize="8")
+    plt.grid()
+    save_figure('plot_nebot_3', show=SHOW_PLOTS)
+
 
 
 
@@ -569,7 +588,7 @@ def simulation():
 #     Rp = 5e-4                    # [m^2 * K / W]
 #     Ea = 40000                   # [J/mol]
 #     Rg = 8.314                   # [J/(mol * K)]
-#     k25 = 1100
+#     k25 = 1100                   # [W/m^2/K/s]
 #     Ar = (math.pi * pow(Dm, 2)) /4
 #     e_inf = 200e-6
 #     t_max = 365
