@@ -4,13 +4,28 @@ import math
 import numpy as np
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
+import os
+
+FIGURES_DIR = "figures"
+SHOW_PLOTS = False
+
+def save_figure(name, fig=None, show=False):
+    os.makedirs(FIGURES_DIR, exist_ok=True)
+    if fig is None:
+        fig = plt.gcf()
+    fig.savefig(os.path.join(FIGURES_DIR, f"{name}.pdf"), bbox_inches="tight", pad_inches=0)
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
 
 # Rtot value
 def Rtot(e, lamb, Rp):
     Rtot = e / lamb + Rp
     return Rtot
 
-# dTdx value
+# dTdx value+9
 def dTdx(T, e, lamb_f, Rp, r, m, Cp, Text):
     Rt = Rtot(e, lamb_f, Rp)
     dTdx = (2 * math.pi * r) / (m * Cp * Rt) * (Text - T)
@@ -48,7 +63,7 @@ def simulate_T_e(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3
     T = np.array(T)
     e = np.array(e) * pow(10, 6)
 
-    return T, e, x, t    
+    return T, e, x, t
 
 # Plots e in function of x for fixed values of time
 def plot_e_x(e, t, x):
@@ -63,14 +78,14 @@ def plot_e_x(e, t, x):
     plt.xlabel('x(m)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
-    plt.show()
+    save_figure('plot_e_x', show=SHOW_PLOTS)
 
 # Plots e in function of time for fixed percentages of total lenght of the pipe
 def plot_e_t(e, t, x):
     thickness = 2
 
-    percentages = [0.25, 0.5, 0.75, 0.99]
-    percent = [25, 50, 75, 100]
+    percentages = [0, 0.25, 0.5, 0.75, 0.99]
+    percent = [0, 25, 50, 75, 100]
 
     for i in range(len(percentages)):
         plt.plot(t, e[:, int(len(x) * percentages[i])], label=f'{percent[i]}%', linewidth=thickness)
@@ -78,7 +93,7 @@ def plot_e_t(e, t, x):
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
-    plt.show()
+    save_figure('plot_e_t', show=SHOW_PLOTS)
 
 # Plots both eXt and eXx
 def plot_eXt_eXx(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3.1, t_max = 60, density = 1000):
@@ -94,7 +109,7 @@ def plot_sensibility(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_ma
 
     densities = [50, 100, 150, 300, 500, 750, 1000]
     for density in densities:
-        T, _, x, t = simulate_T_e(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density = density)
+        T, _, x, t = simulate_T_e(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
         t_plot = t
         x, t = np.meshgrid(x, t)
         plt.plot(t_plot[1:], T[1:, -1] - 273.15, label=f'{density} points', linewidth=thickness)
@@ -103,7 +118,7 @@ def plot_sensibility(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_ma
     plt.xlabel('t (jours)')
     plt.legend(loc='best', fontsize="8")
     plt.grid()
-    plt.show()
+    save_figure('plot_sensibility', show=SHOW_PLOTS)
 
 # Plots de experimental data in addition to our model varying the
 # parameters k25 and E
@@ -133,31 +148,31 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
-    plt.show()
+    save_figure('plot_nebot', show=SHOW_PLOTS)
 
     k25 = 1100
     plt.plot(time_nebot, R_nebot, 's')
 
     # Ea tests
-    list_Ea = [30000, 40000, 50000]
-    for current_Ea in list_Ea:
-        Ea = current_Ea
+    list_E = [30000, 40000, 50000]
+    for current_E in list_E:
+        E = current_E
         _, e, x, t  = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
         Rb = e/(lamb_f * 1000)
-        plt.plot(t, Rb[:, int(len(x)/2)], label=f'E = {Ea}', linewidth=thickness)
+        plt.plot(t, Rb[:, int(len(x)/2)], label=f'E = {E}', linewidth=thickness)
 
     plt.ylabel(r'$R (m^2 K/kW)$')
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
-    plt.show()
+    save_figure('plot_nebot_2', show=SHOW_PLOTS)
 
 # Do a 3D plot of the behavior of the system
 def plot3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     T, _, x, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     x, t = np.meshgrid(x, t)
 
-    _, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
     ax.plot_surface(t, x, T - 273.15, cmap=cm.coolwarm, linewidth=0, antialiased=False)
     ax.zaxis.set_major_locator(LinearLocator(10))
     # A StrMethodFormatter is used automatically
@@ -167,7 +182,7 @@ def plot3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     ax.set_ylabel('x (m)')
     ax.set_zlabel(r'T $^oC$')
 
-    plt.show()
+    save_figure('plot3D', fig, show=SHOW_PLOTS)
 
 def power(N, m, Cp, Tf, Ti):
     return N*m*Cp*(Tf-Ti)
@@ -193,7 +208,7 @@ def plot_lastT_for_different_m(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e
     plt.xlabel('t (jours)')
     plt.legend(loc='best', fontsize="8")
     plt.grid()
-    plt.show()
+    save_figure('plot_lastT_for_different_m', show=SHOW_PLOTS)
 
 # Get the power of the case 1 to sea scenario
 def get_power_case1_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density,):
@@ -387,7 +402,7 @@ def plot_powerXt(p, t):
     plt.ylabel(r'$Puissance \> (MW)$')
     plt.xlabel('t (jours)')
     plt.grid()
-    plt.show()
+    save_figure('plot_powerXt', show=SHOW_PLOTS)
 
 # Plots the temperature of the output of the pipes through time to different values of e_inf
 def plot_lastT_diferent_einf(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
@@ -407,7 +422,7 @@ def plot_lastT_diferent_einf(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_i
     plt.xlabel('t (jours)')
     plt.legend(loc='best', fontsize="8")
     plt.grid()
-    plt.show()
+    save_figure('plot_lastT_diferent_einf', show=SHOW_PLOTS)
 
 def plot_power_npipes(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
     T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
@@ -430,7 +445,7 @@ def plot_power_npipes(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_m
     plt.xlabel('t (jours)')
     plt.legend(loc='best', fontsize="8")
     plt.grid()
-    plt.show()
+    save_figure('plot_power_npipes', show=SHOW_PLOTS)
 
 def case1_npipesXm(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
     m_list = np.arange(0.4, 0.8, (0.8-0.45)/10)
@@ -446,7 +461,7 @@ def case1_npipesXm(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max,
     plt.xlabel(r'$\dot{m} \> kg/s$')
     plt.plot(m_list, n_tubes)
     plt.grid()
-    plt.show()
+    save_figure('case1_npipesXm', show=SHOW_PLOTS)
 
 def cost_pump(n, v, m):
     rho = 1000
@@ -463,20 +478,22 @@ def cost_pump(n, v, m):
 def simulation():
     
     # Parameters
-    Rp = 0.051             # [m^2 * K / W]
-    lamb_f = 0.6           # [W/m/K]
-    r = 0.01               # [m]
-    m = 0.5                # [kg/s]
-    Cp = 4184              # [J/kg/K]
-    Text = 60 + 273.15     # [K]
-    E = 40000              # [J/mol]
-    R = 8.314              # [J/(mol * K)]
-    k25 = 1100             # [m/s]
-    e_inf = 200e-6         # [m]
+    Rp = 5e-4                 # [m^2 * K / W]
+    lamb_f = 0.6              # [W/m/K]
+    r = 6e-3                  # [m]
+    v = 1.85                  # [m/s]
+    Ar = math.pi * pow(r, 2)  # [m^2]
+    m = 1000 * Ar * v         # [kg/s]
+    Cp = 4184                 # [J/kg/K]
+    Text = 35 + 273.15        # [K]
+    E = 40000                 # [J/mol]
+    R = 8.314                 # [J/(mol * K)]
+    k25 = 1100                # [m/s]
+    e_inf = 200e-6            # [m]
 
     # Initial conditions
-    T0 = 17 + 273.15       # [K]
-    e0 = 0.01 * e_inf      # [m]
+    T0 = 17 + 273.15         # [K]
+    e0 = 0.01 * e_inf        # [m]
 
     plot3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     plot_sensibility(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
