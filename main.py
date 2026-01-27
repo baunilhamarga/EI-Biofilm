@@ -5,95 +5,102 @@ import numpy as np
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 
-# dTdz value
-def dTdz(e, Tc, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf):
-    dTdz = (math.pi*Dm*(Th-Tc)) / (m*Cp*(e/lamb + Rp))
-    return dTdz
+# Rtot value
+def Rtot(e, lamb, Rp):
+    Rtot = e / lamb + Rp
+    return Rtot
+
+# dTdx value
+def dTdx(T, e, lamb_f, Rp, r, m, Cp, Text):
+    Rtot = Rtot(e, lamb_f, Rp)
+    dTdx = (2 * math.pi * r) / (m * Cp * Rtot) * (Text - T)
+    return dTdx
 
 # dedt value
-def dedt(e, Tc, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf):
-    dedt = (k25 * e / lamb) * (e_inf - e) * math.exp(-Ea/Rg * (1/Tc - 1/298.15))
+def dedt(T, e, lamb_f, E, R, k25, e_inf):
+    dedt = k(T, E, R, k25) / lamb_f * (e_inf - e) * e
     return dedt
 
-# Simulates Tc and e in function of time and .
-# Returns the linear space of time and z
-# and the matrices Tc and z
-def simulate_Tc_e(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max = 3.1, t_max = 60, density = 1000):
-    dz = z_max/density
-    z = np.arange(0, z_max, dz)
+# k value
+def k(T, E, R, k25):
+    k = k25 * math.exp(-E/R * (1/T - 1/298.15))
+    return k
+
+# Simulates T and e in function of time
+# Returns the linear space of time and x
+# and the matrices T and x
+def simulate_T_e(T, T0, e, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3.1, t_max = 60, density = 1000):
+    dx = x_max/density
+    x = np.arange(0, x_max, dx)
 
     dt = t_max/density
     t = np.arange(0, t_max, dt)
 
-    # Initial conditions
-    Tc0 = 17 + 273.15
-    e0 = 0.01*e_inf
-
     # Tc: time x position
-    Tc = [[Tc0 for _ in range(len(z))] for _ in range(len(t))]
-    e = [[e0 for _ in range(len(z))] for _ in range(len(t))]
+    T = [[T0 for _ in range(len(x))] for _ in range(len(t))]
+    e = [[e0 for _ in range(len(x))] for _ in range(len(t))]
 
     for i in range(1, len(t)):
-        for j in range(1, len(z)):
-            Tc[i][j] = (Tc[i][j-1] + dTdz(e[i][j-1], Tc[i][j-1], Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf) * dz)
-            e[i][j] = (e[i-1][j] + dedt(e[i-1][j], Tc[i-1][j], Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf) * dt)
+        for j in range(1, len(x)):
+            T[i][j] = (T[i][j-1] + dTdx(T[i][j-1], e[i][j-1], T, e, lamb_f, Rp, r, m, Cp, Text) * dx)
+            e[i][j] = (e[i-1][j] + dedt(T[i-1][j], e[i-1][j], lamb_f, E, R, k25, e_inf) * dt)
 
-    Tc = np.array(Tc)
+    T = np.array(T)
     e = np.array(e) * pow(10, 6)
 
-    return Tc, e, z, t    
+    return T, e, x, t    
 
-# Plots e in function of z for fixed values of time
-def plot_e_z(Tc, e, t, z):
+# Plots e in function of x for fixed values of time
+def plot_e_x(e, t, x):
     thickness = 2
 
     percentages = [5/50, 10/50, 15/50, 20/50, 25/50, 30/50, 35/50, 40/50, 49.9/50]
     days = [5, 10, 15, 20, 25, 30, 35, 40, 50]
 
     for i in range(len(percentages)):
-        plt.plot(z[1:], e[int(len(t)*percentages[i]), 1:], label=f'{days[i]} days', linewidth=thickness)
+        plt.plot(x[1:], e[int(len(t)*percentages[i]), 1:], label=f'{days[i]} jours', linewidth=thickness)
     plt.ylabel(r'$e (\mu m)$')
-    plt.xlabel('z(m)')
+    plt.xlabel('x(m)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
     plt.show()
 
-# Plots e in function of time for fixed perccentages of total lenght of the pipe
-def plot_e_t(Tc, e, t, z):
+# Plots e in function of time for fixed percentages of total lenght of the pipe
+def plot_e_t(e, t, x):
     thickness = 2
 
     percentages = [0.25, 0.5, 0.75, 0.99]
     percent = [25, 50, 75, 100]
 
     for i in range(len(percentages)):
-        plt.plot(t, e[:, int(len(z) * percentages[i])], label=f'{percent[i]}%', linewidth=thickness)
+        plt.plot(t, e[:, int(len(x) * percentages[i])], label=f'{percent[i]}%', linewidth=thickness)
     plt.ylabel(r'$e (\mu m)$')
-    plt.xlabel('t (days)')
+    plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
     plt.show()
 
-# Plots both eXt and eXz
-def plot_eXt_eXz(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf):
-    Tc, e, z, t = simulate_Tc_e(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf)
+# Plots both eXt and eXx
+def plot_eXt_eXx(T, T0, e, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3.1, t_max = 60, density = 1000):
+    T, e, x, t = simulate_T_e(T, T0, e, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
 
-    plot_e_t(Tc, e, t, z)
-    plot_e_z(Tc, e, t, z)
+    plot_e_t(T, e, t, x)
+    plot_e_x(T, e, t, x)
 
-# Give different plots of e in fucntion of z in the last instant of time for different
+# Give different plots of e in function of x in the last instant of time for different
 # numbers of points to use in simulation
-def plot_sensibility(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf):
+def plot_sensibility(T, T0, e, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3.1, t_max = 60):
     thickness = 2
 
     densities = [50, 100, 150, 300, 500, 750, 1000]
     for density in densities:
-        Tc, e, z, t = simulate_Tc_e(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, density = density)
+        T, e, x, t = simulate_T_e(T, T0, e, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density = density)
         t_plot = t
-        z, t = np.meshgrid(z, t)
-        plt.plot(t_plot[1:], Tc[1:, -1] - 273.15, label=f'{density} points', linewidth=thickness)
+        x, t = np.meshgrid(x, t)
+        plt.plot(t_plot[1:], T[1:, -1] - 273.15, label=f'{density} points', linewidth=thickness)
 
     plt.ylabel(r'$T_f \> (ºC)$')
-    plt.xlabel('t (days)')
+    plt.xlabel('t (jours)')
     plt.legend(loc='best', fontsize="8")
     plt.grid()
     plt.show()
@@ -118,12 +125,12 @@ def plot_nebot(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf):
     list_k25 = [700, 1100, 1500]
     for current_k25 in list_k25:
         k25 = current_k25
-        Tc, e, z, t  = simulate_Tc_e(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf)
+        Tc, e, z, t  = simulate_Tc_e_with_initial(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf)
         Rb = e/(lamb * 1000)
         plt.plot(t, Rb[:, int(len(z)/2)], label=f'k25 = {k25}', linewidth=thickness)
 
     plt.ylabel(r'$R (m^2 K/kW)$')
-    plt.xlabel('t (days)')
+    plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
     plt.show()
@@ -135,19 +142,19 @@ def plot_nebot(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf):
     list_Ea = [30000, 40000, 50000]
     for current_Ea in list_Ea:
         Ea = current_Ea
-        Tc, e, z, t  = simulate_Tc_e(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf)
+        Tc, e, z, t  = simulate_Tc_e_with_initial(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf)
         Rb = e/(lamb * 1000)
         plt.plot(t, Rb[:, int(len(z)/2)], label=f'E = {Ea}', linewidth=thickness)
 
     plt.ylabel(r'$R (m^2 K/kW)$')
-    plt.xlabel('t (days)')
+    plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
     plt.show()
 
 # Do a 3D plot of the behavior of the system
 def plot3D(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf):
-    Tc, e, z, t = simulate_Tc_e(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf)
+    Tc, e, z, t = simulate_Tc_e_with_initial(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf)
     z, t = np.meshgrid(z, t)
 
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
@@ -156,21 +163,11 @@ def plot3D(Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf):
     # A StrMethodFormatter is used automatically
     ax.zaxis.set_major_formatter('{x:.02f}')
 
-    ax.set_xlabel('t (days)')
+    ax.set_xlabel('t (jours)')
     ax.set_ylabel('z (m)')
     ax.set_zlabel(r'T $^oC$')
 
     plt.show()
-
-# dTdz value
-def dTdz(e, Tc, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf):
-    dTdz = (math.pi*Dm*(Th-Tc)) / (m*Cp*(e/lamb + Rp))
-    return dTdz
-
-# dedt value
-def dedt(e, Tc, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf):
-    dedt = (k25 * e / lamb) * (e_inf - e) * math.exp(-Ea/Rg * (1/Tc - 1/298.15))
-    return dedt
 
 def power(N, m, Cp, Tf, Ti):
     return N*m*Cp*(Tf-Ti)
@@ -191,7 +188,7 @@ def simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v
 
     for i in range(1, len(t)):
         for j in range(1, len(z)):
-            Tc[i][j] = (Tc[i][j-1] + dTdz(e[i][j-1], Tc[i][j-1], Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf) * dz)
+            Tc[i][j] = (Tc[i][j-1] + dTdx(e[i][j-1], Tc[i][j-1], Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf) * dz)
             e[i][j] = (e[i-1][j] + dedt(e[i-1][j], Tc[i-1][j], Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf) * dt)
 
     Tc = np.array(Tc)
@@ -217,7 +214,7 @@ def plot_lastTc_for_different_m(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, 
         plt.axhline(30, linestyle='dashed')
 
     plt.ylabel(r'$T_f \> (ºC))$')
-    plt.xlabel('t (days)')
+    plt.xlabel('t (jours)')
     plt.legend(loc='best', fontsize="8")
     plt.grid()
     plt.show()
@@ -411,8 +408,8 @@ def plot_powerXt(p, t):
 
     plt.plot(t, p, linewidth=thickness)
     plt.axhline(22, color='red', linestyle='dashed')
-    plt.ylabel(r'$Power \> (MW)$')
-    plt.xlabel('t (days)')
+    plt.ylabel(r'$Puissance \> (MW)$')
+    plt.xlabel('t (jours)')
     plt.grid()
     plt.show()
 
@@ -426,12 +423,12 @@ def plot_lastTc_diferent_einf(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v,
         t_plot = t
         z, t = np.meshgrid(z, t)
         percentage_to_plot = percentage * 100
-        plt.plot(t_plot[1:], Tc[1:, -1] - 273.15, label=f'{percentage_to_plot}% of e_inf', linewidth=thickness)
+        plt.plot(t_plot[1:], Tc[1:, -1] - 273.15, label=f'{percentage_to_plot}% de e_inf', linewidth=thickness)
         Tf = Tc[-1, -1]-273.15
         print(f'Percentage = {percentage}, Tf = {Tf}, m = {m}')
 
     plt.ylabel(r'$T_f \> (ºC)$')
-    plt.xlabel('t (days)')
+    plt.xlabel('t (jours)')
     plt.legend(loc='best', fontsize="8")
     plt.grid()
     plt.show()
@@ -448,13 +445,13 @@ def plot_power_npipes(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_in
     for current_n in n_list:
         for i in range(len(t)):
             p.append(power(current_n, m, Cp, Tf[i], Ti) * pow(10, -6))
-        plt.plot(t, p, linewidth=thickness, label = f'{current_n} pipes')
-        print(f'{current_n} pipes: Pmax = {p[0]}, Pmin = {p[-1]}')
+        plt.plot(t, p, linewidth=thickness, label = f'{current_n} tuyaux')
+        print(f'{current_n} tuyaux: Pmax = {p[0]}, Pmin = {p[-1]}')
         p = []
 
     plt.axhline(22, color='red', linestyle='dashed')
-    plt.ylabel(r'$Power \> (MW)$')
-    plt.xlabel('t (days)')
+    plt.ylabel(r'$Puissance \> (MW)$')
+    plt.xlabel('t (jours)')
     plt.legend(loc='best', fontsize="8")
     plt.grid()
     plt.show()
@@ -471,7 +468,7 @@ def case1_npipesXm(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, 
         Tf = Tc[-1, -1] - 273.15
         n_tubes.append((22*pow(10, 6)) / (current_m*Cp*(Tf - Ti)))
 
-    plt.ylabel(r'$\text{N tubes}$')
+    plt.ylabel(r'$\text{N tuyaux}$')
     plt.xlabel(r'$\dot{m} \> kg/s$')
     plt.plot(m_list, n_tubes)
     plt.grid()
