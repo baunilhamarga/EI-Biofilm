@@ -178,7 +178,7 @@ def power(N, m, Cp, Tf, Ti):
 # Simulates Tc and e in function of time and .
 # Returns the linear space of time and z
 # and the matrices Tc and z
-def simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density):
+def simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density):
     dz = z_max/density
     z = np.arange(0, z_max, dz)
 
@@ -206,7 +206,7 @@ def plot_lastTc_for_different_m(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, 
     m_list = [0.40, 0.45, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80]
     for current_m in m_list:
         m = current_m
-        Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
+        Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
         plt.plot(t[1:], Tc[1:, -1] - 273.15, label=f'm = {m:.2f} kg/s', linewidth=thickness)
         Tf = Tc[-1, -1] - 273.15
         print(f'm = {m}, Tf = {Tf}')
@@ -224,7 +224,7 @@ def plot_lastTc_for_different_m(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, 
 
 # Get the power of the case 1 to sea scenario
 def get_power_case1_sea(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density):
-    Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
+    Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
     t = t[1:]
     Tf = Tc[1:, -1] - 273.15
     p = []
@@ -238,7 +238,7 @@ def get_power_case1_sea(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_
 
 # Get the power of the case 2 to sea scenario
 def get_power_case2_sea(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density):
-    Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
+    Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
     t = t[1:]
     Tf = Tc[1:, -1] - 273.15
     p = []
@@ -252,7 +252,7 @@ def get_power_case2_sea(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_
 
 # Get the power of the case 3 to sea scenario
 def get_power_case3_sea(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density):
-    Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
+    Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
     t = t[1:]
     Tf = Tc[1:, -1] - 273.15
 
@@ -286,7 +286,7 @@ def get_power_case3_sea(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_
 
 # Get the power of the case 3 to river scenario
 def get_power_case3_river(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density):
-    Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
+    Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
     t = t[1:]
     Tf = Tc[1:, -1] - 273.15
 
@@ -332,10 +332,10 @@ def get_power_case4(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf,
     Tfs = []
     Ti_cleaning = []
     cleaning = []
-    Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
+    Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
     Tfs_reference = Tc[1:, -1] - 273.15
     for i in range(n_groups):
-        Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
+        Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
         Tfs.append(Tc[1:, -1] - 273.15)
         Ti_cleaning.append(0)
         cleaning.append(False)
@@ -379,7 +379,7 @@ def get_power_case4(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf,
 
 # Get the power of the case 1 to river scenario
 def get_power_case1_river(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density):
-    Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
+    Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
     t = t[1:]
     Tf = Tc[1:, -1] - 273.15
     p = []
@@ -393,7 +393,7 @@ def get_power_case1_river(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, 
 
 # Get the power of the case 2 to river scenario
 def get_power_case2_river(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density):
-    Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
+    Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
     t = t[1:]
     Tf = Tc[1:, -1] - 273.15
     p = []
@@ -422,7 +422,7 @@ def plot_lastTc_diferent_einf(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v,
 
     percentages = [1, 0.3]
     for percentage in percentages:
-        Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf*percentage, z_max, t_max, density)
+        Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf*percentage, z_max, t_max, density)
         t_plot = t
         z, t = np.meshgrid(z, t)
         percentage_to_plot = percentage * 100
@@ -437,7 +437,7 @@ def plot_lastTc_diferent_einf(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v,
     plt.show()
 
 def plot_power_npipes(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density):
-    Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
+    Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
     t = t[1:]
     Tf = Tc[1:, -1] - 273.15
     thickness = 2
@@ -466,7 +466,7 @@ def case1_npipesXm(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, 
     n_tubes = []
     for current_m in m_list:
         m = current_m
-        Tc, e, z, t = simulate_Tc_e(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
+        Tc, e, z, t = simulate_Tc_e_with_initial(Tc0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, z_max, t_max, density)
         Ti = Tc0 - 273.15
         Tf = Tc[-1, -1] - 273.15
         n_tubes.append((22*pow(10, 6)) / (current_m*Cp*(Tf - Ti)))
