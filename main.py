@@ -9,11 +9,11 @@ import os
 FIGURES_DIR = "figures"
 SHOW_PLOTS = False
 
-def save_figure(name, fig=None, show=False):
+def save_figure(name, fig=None, show=False, pad_inches=0):
     os.makedirs(FIGURES_DIR, exist_ok=True)
     if fig is None:
         fig = plt.gcf()
-    fig.savefig(os.path.join(FIGURES_DIR, f"{name}.pdf"), bbox_inches="tight", pad_inches=0)
+    fig.savefig(os.path.join(FIGURES_DIR, f"{name}.pdf"), bbox_inches="tight", pad_inches=pad_inches)
     if show:
         plt.show()
     else:
@@ -25,7 +25,7 @@ def Rtot(e, lamb, Rp):
     Rtot = e / lamb + Rp
     return Rtot
 
-# dTdx value+9
+# dTdx value
 def dTdx(T, e, lamb_f, Rp, r, m, Cp, Text):
     Rt = Rtot(e, lamb_f, Rp)
     dTdx = (2 * math.pi * r) / (m * Cp * Rt) * (Text - T)
@@ -69,13 +69,13 @@ def simulate_T_e(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3
 def plot_e_x(e, t, x):
     thickness = 2
 
-    percentages = [5/50, 10/50, 15/50, 20/50, 25/50, 30/50, 35/50, 40/50, 49.9/50]
-    days = [5, 10, 15, 20, 25, 30, 35, 40, 50]
+    percentages = [0/50, 5/50, 10/50, 15/50, 20/50, 25/50, 30/50, 35/50, 40/50, 49.9/50]
+    days = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50]
 
     for i in range(len(percentages)):
         plt.plot(x[1:], e[int(len(t)*percentages[i]), 1:], label=f'{days[i]} jours', linewidth=thickness)
     plt.ylabel(r'$e (\mu m)$')
-    plt.xlabel('x(m)')
+    plt.xlabel('x (m)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
     save_figure('plot_e_x', show=SHOW_PLOTS)
@@ -84,8 +84,8 @@ def plot_e_x(e, t, x):
 def plot_e_t(e, t, x):
     thickness = 2
 
-    percentages = [0, 0.25, 0.5, 0.75, 0.99]
-    percent = [0, 25, 50, 75, 100]
+    percentages = [1e-3, 0.25, 0.5, 0.75, 0.99]
+    percent = [1e-3, 25, 50, 75, 100]
 
     for i in range(len(percentages)):
         plt.plot(t, e[:, int(len(x) * percentages[i])], label=f'{percent[i]}%', linewidth=thickness)
@@ -95,12 +95,49 @@ def plot_e_t(e, t, x):
     plt.grid()
     save_figure('plot_e_t', show=SHOW_PLOTS)
 
+# Plots e in function of x for fixed values of time
+def plot_T_x(T, t, x):
+    thickness = 2
+
+    percentages = [0/50, 5/50, 10/50, 15/50, 20/50, 25/50, 30/50, 35/50, 40/50, 49.9/50]
+    days = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50]
+
+    for i in range(len(percentages)):
+        plt.plot(x[1:], T[int(len(t)*percentages[i]), 1:] - 273.15, label=f'{days[i]} jours', linewidth=thickness)
+    plt.ylabel(r'T $^oC$')
+    plt.xlabel('x (m)')
+    plt.legend(loc='center left', fontsize="8")
+    plt.grid()
+    save_figure('plot_T_x', show=SHOW_PLOTS)
+
+# Plots e in function of time for fixed percentages of total lenght of the pipe
+def plot_T_t(T, t, x):
+    thickness = 2
+
+    percentages = [1e-3, 0.25, 0.5, 0.75, 0.99]
+    percent = [1e-3, 25, 50, 75, 100]
+
+    for i in range(len(percentages)):
+        plt.plot(t[1:], T[1:, int(len(x) * percentages[i])] - 273.15, label=f'{percent[i]}%', linewidth=thickness)
+    plt.ylabel(r'T $^oC$')
+    plt.xlabel('t (jours)')
+    plt.legend(loc='center left', fontsize="8")
+    plt.grid()
+    save_figure('plot_T_t', show=SHOW_PLOTS)
+
 # Plots both eXt and eXx
 def plot_eXt_eXx(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3.1, t_max = 60, density = 1000):
     _, e, x, t = simulate_T_e(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
 
     plot_e_t(e, t, x)
     plot_e_x(e, t, x)
+
+# Plots both TXt and TXx
+def plot_TXt_TXx(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3.1, t_max = 60, density = 1000):
+    T, _, x, t = simulate_T_e(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
+
+    plot_T_t(T, t, x)
+    plot_T_x(T, t, x)
 
 # Give different plots of e in function of x in the last instant of time for different
 # numbers of points to use in simulation
@@ -114,7 +151,7 @@ def plot_sensibility(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_ma
         x, t = np.meshgrid(x, t)
         plt.plot(t_plot[1:], T[1:, -1] - 273.15, label=f'{density} points', linewidth=thickness)
 
-    plt.ylabel(r'$T_f \> (ºC)$')
+    plt.ylabel(r'$T_f \> (°C)$')
     plt.xlabel('t (jours)')
     plt.legend(loc='best', fontsize="8")
     plt.grid()
@@ -140,7 +177,7 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     list_k25 = [700, 1100, 1500]
     for current_k25 in list_k25:
         k25 = current_k25
-        T, e, x, t  = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
+        _, e, x, t  = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
         Rb = e/(lamb_f * 1000)
         plt.plot(t, Rb[:, int(len(x)/2)], label=f'k25 = {k25}', linewidth=thickness)
 
@@ -167,8 +204,11 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     plt.grid()
     save_figure('plot_nebot_2', show=SHOW_PLOTS)
 
-# Do a 3D plot of the behavior of the system
-def plot3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
+
+
+
+# Do a 3D plot of the behavior of the temperature in the system
+def plotT3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     T, _, x, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     x, t = np.meshgrid(x, t)
 
@@ -180,9 +220,26 @@ def plot3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
 
     ax.set_xlabel('t (jours)')
     ax.set_ylabel('x (m)')
-    ax.set_zlabel(r'T $^oC$')
+    ax.set_zlabel(r'T ($^oC$)')
 
-    save_figure('plot3D', fig, show=SHOW_PLOTS)
+    save_figure('plotT3D', fig, show=SHOW_PLOTS, pad_inches=0.15)
+
+# Do a 3D plot of the behavior of the biofilm thickness in the system
+def plote3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
+    _, e, x, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
+    x, t = np.meshgrid(x, t)
+
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    ax.plot_surface(t, x, e, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+    ax.zaxis.set_major_locator(LinearLocator(10))
+    # A StrMethodFormatter is used automatically
+    ax.zaxis.set_major_formatter('{x:.02f}')
+
+    ax.set_xlabel('t (jours)')
+    ax.set_ylabel('x (m)')
+    ax.set_zlabel(r'$e\ (\mu m)$')
+
+    save_figure('plote3D', fig, show=SHOW_PLOTS, pad_inches=0.15)
 
 def power(N, m, Cp, Tf, Ti):
     return N*m*Cp*(Tf-Ti)
@@ -495,10 +552,12 @@ def simulation():
     T0 = 17 + 273.15         # [K]
     e0 = 0.01 * e_inf        # [m]
 
-    plot3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
+    plotT3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
+    plote3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     plot_sensibility(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     plot_eXt_eXx(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
+    plot_TXt_TXx(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
 
 # def cases():
 #     # Contants
