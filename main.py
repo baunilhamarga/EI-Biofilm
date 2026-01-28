@@ -9,6 +9,7 @@ import os
 FIGURES_DIR = "figures"
 SHOW_PLOTS = False
 
+
 def save_figure(name, fig=None, show=False, pad_inches=0):
     os.makedirs(FIGURES_DIR, exist_ok=True)
     if fig is None:
@@ -25,21 +26,25 @@ def Rtot(e, lamb, Rp):
     Rtot = e / lamb + Rp
     return Rtot
 
+
 # dTdx value
 def dTdx(T, e, lamb_f, Rp, r, m, Cp, Text):
     Rt = Rtot(e, lamb_f, Rp)
     dTdx = (2 * math.pi * r) / (m * Cp * Rt) * (Text - T)
     return dTdx
 
+
 # dedt value
 def dedt(T, e, lamb_f, E, R, k25, e_inf):
     dedt = k(T, E, R, k25) / lamb_f * (e_inf - e) * e
     return dedt
 
+
 # k value
 def k(T, E, R, k25):
     k = k25 * math.exp(-E/R * (1/T - 1/298.15))
     return k
+
 
 # Simulates T and e in function of time
 # Returns the linear space of time and x
@@ -65,6 +70,7 @@ def simulate_T_e(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3
 
     return T, e, x, t
 
+
 # Plots e in function of x for fixed values of time
 def plot_e_x(e, t, x):
     thickness = 2
@@ -79,6 +85,7 @@ def plot_e_x(e, t, x):
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
     save_figure('plot_e_x', show=SHOW_PLOTS)
+
 
 # Plots e in function of time for fixed percentages of total lenght of the pipe
 def plot_e_t(e, t, x):
@@ -95,6 +102,7 @@ def plot_e_t(e, t, x):
     plt.grid()
     save_figure('plot_e_t', show=SHOW_PLOTS)
 
+
 # Plots e in function of x for fixed values of time
 def plot_T_x(T, t, x):
     thickness = 2
@@ -109,6 +117,7 @@ def plot_T_x(T, t, x):
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
     save_figure('plot_T_x', show=SHOW_PLOTS)
+
 
 # Plots e in function of time for fixed percentages of total lenght of the pipe
 def plot_T_t(T, t, x):
@@ -125,6 +134,7 @@ def plot_T_t(T, t, x):
     plt.grid()
     save_figure('plot_T_t', show=SHOW_PLOTS)
 
+
 # Plots both eXt and eXx
 def plot_eXt_eXx(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3.1, t_max = 60, density = 1000):
     _, e, x, t = simulate_T_e(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
@@ -132,12 +142,14 @@ def plot_eXt_eXx(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3
     plot_e_t(e, t, x)
     plot_e_x(e, t, x)
 
+
 # Plots both TXt and TXx
 def plot_TXt_TXx(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3.1, t_max = 60, density = 1000):
     T, _, x, t = simulate_T_e(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
 
     plot_T_t(T, t, x)
     plot_T_x(T, t, x)
+
 
 # Give different plots of e in function of x in the last instant of time for different
 # numbers of points to use in simulation
@@ -156,6 +168,7 @@ def plot_sensibility(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_ma
     plt.legend(loc='best', fontsize="8")
     plt.grid()
     save_figure('plot_sensibility', show=SHOW_PLOTS)
+
 
 # Plots de experimental data in addition to our model varying the
 # parameters k25 and E
@@ -185,7 +198,7 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
-    save_figure('plot_nebot', show=SHOW_PLOTS)
+    save_figure('plot_nebot_k25', show=SHOW_PLOTS)
 
     k25 = 1100
     plt.plot(time_nebot, R_nebot, 's')
@@ -202,7 +215,7 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
-    save_figure('plot_nebot_2', show=SHOW_PLOTS)
+    save_figure('plot_nebot_E', show=SHOW_PLOTS)
 
     E = 40000
     plt.figure()
@@ -220,10 +233,7 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
-    save_figure('plot_nebot_3', show=SHOW_PLOTS)
-
-
-
+    save_figure('plot_nebot_e0', show=SHOW_PLOTS)
 
 
 # Do a 3D plot of the behavior of the temperature in the system
@@ -243,6 +253,7 @@ def plotT3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
 
     save_figure('plotT3D', fig, show=SHOW_PLOTS, pad_inches=0.15)
 
+
 # Do a 3D plot of the behavior of the biofilm thickness in the system
 def plote3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     _, e, x, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
@@ -260,8 +271,10 @@ def plote3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
 
     save_figure('plote3D', fig, show=SHOW_PLOTS, pad_inches=0.15)
 
+
 def power(N, m, Cp, Tf, Ti):
     return N*m*Cp*(Tf-Ti)
+
 
 # Plots the temperature of the output of the pipes through time to different values of m
 def plot_lastT_for_different_m(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density, water):
@@ -286,6 +299,7 @@ def plot_lastT_for_different_m(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e
     plt.grid()
     save_figure('plot_lastT_for_different_m', show=SHOW_PLOTS)
 
+
 # Get the power of the case 1 to sea scenario
 def get_power_case1_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density,):
     T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
@@ -300,6 +314,7 @@ def get_power_case1_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x
 
     return p, t
 
+
 # Get the power of the case 2 to sea scenario
 def get_power_case2_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
     T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
@@ -313,6 +328,7 @@ def get_power_case2_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x
         p.append(power(510, m, Cp, Tf[i], Ti) * pow(10, -6))
 
     return p, t
+
 
 # Get the power of the case 3 to sea scenario
 def get_power_case3_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
@@ -348,6 +364,7 @@ def get_power_case3_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x
 
     return p, t
 
+
 # Get the power of the case 3 to river scenario
 def get_power_case3_river(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
     T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
@@ -381,6 +398,7 @@ def get_power_case3_river(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf,
     print(f'Number of cleans: {n_cleans}')
 
     return p, t
+
 
 # Get the power of the case 4
 def get_power_case4(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density, water):
@@ -441,6 +459,7 @@ def get_power_case4(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max
 
     return p, t
 
+
 # Get the power of the case 1 to river scenario
 def get_power_case1_river(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
     T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
@@ -454,6 +473,7 @@ def get_power_case1_river(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf,
         p.append(power(933, m, Cp, Tf[i], Ti) * pow(10, -6))
 
     return p, t
+
 
 # Get the power of the case 2 to river scenario
 def get_power_case2_river(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
@@ -469,6 +489,7 @@ def get_power_case2_river(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf,
 
     return p, t
 
+
 # Plots the power over time
 def plot_powerXt(p, t):
     thickness = 2
@@ -479,6 +500,7 @@ def plot_powerXt(p, t):
     plt.xlabel('t (jours)')
     plt.grid()
     save_figure('plot_powerXt', show=SHOW_PLOTS)
+
 
 # Plots the temperature of the output of the pipes through time to different values of e_inf
 def plot_lastT_diferent_einf(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
@@ -499,6 +521,7 @@ def plot_lastT_diferent_einf(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_i
     plt.legend(loc='best', fontsize="8")
     plt.grid()
     save_figure('plot_lastT_diferent_einf', show=SHOW_PLOTS)
+
 
 def plot_power_npipes(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
     T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
@@ -523,6 +546,7 @@ def plot_power_npipes(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_m
     plt.grid()
     save_figure('plot_power_npipes', show=SHOW_PLOTS)
 
+
 def case1_npipesXm(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
     m_list = np.arange(0.4, 0.8, (0.8-0.45)/10)
     n_tubes = []
@@ -539,6 +563,7 @@ def case1_npipesXm(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max,
     plt.grid()
     save_figure('case1_npipesXm', show=SHOW_PLOTS)
 
+
 def cost_pump(n, v, m):
     rho = 1000
     mu = pow(10, -3)
@@ -550,7 +575,8 @@ def cost_pump(n, v, m):
     d = pow(v, 2) * rho / 2
     e_ = 0.3164 * pow((rho * Dm * v / mu), (-0.25))
     return (a*b*c*d*e_)
-    
+
+
 def simulation():
     
     # Parameters
@@ -577,6 +603,7 @@ def simulation():
     plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     plot_eXt_eXx(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     plot_TXt_TXx(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
+
 
 # def cases():
 #     # Contants
@@ -644,6 +671,7 @@ def simulation():
 #     # Case 4 760 pipes
 #     p, t = get_power_case4(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 365*2, 'river')
 #     plot_powerXt(p, t)
+
 
 if __name__ == "__main__":
     simulation()
