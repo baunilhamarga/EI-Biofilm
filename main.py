@@ -260,7 +260,8 @@ def plote3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     x, t = np.meshgrid(x, t)
 
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    ax.plot_surface(t, x, e, cmap=cm.coolwarm, linewidth=0, antialiased=False, elev=90, azim=0)
+    ax.plot_surface(t, x, e, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+    ax.view_init(elev=0, azim=0)
     ax.zaxis.set_major_locator(LinearLocator(10))
     ax.zaxis.set_major_formatter('{x:.02f}')
 
@@ -271,8 +272,8 @@ def plote3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     save_figure('plote3D', fig, show=SHOW_PLOTS, pad_inches=0.15)
 
 
-def power(N, m, Cp, Tf, Ti):
-    return N*m*Cp*(Tf-Ti)
+def power(N, m, Cp, Text, T):
+    return N*m*Cp*(Text - T)
 
 
 # Plots the temperature of the output of the pipes through time to different values of m
