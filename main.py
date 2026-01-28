@@ -5,6 +5,7 @@ import numpy as np
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 import os
+from mpl_toolkits.mplot3d import Axes3D
 
 FIGURES_DIR = "figures"
 SHOW_PLOTS = False
@@ -271,6 +272,67 @@ def plote3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
 
     save_figure('plote3D', fig, show=SHOW_PLOTS, pad_inches=0.15)
 
+def plot_T_x_t(L, r, mdot, cp, Te, Text, R_propre, lambda_f, e_inf, e0, k25, E, R, dt=3600):    
+    Nt=int(30*24*3600/dt)           
+    t = np.arange(Nt) * dt
+
+    def k_T(T):
+        return k25 * np.exp(-E/R * (1/T - 1/298.15))
+    def MA(x):
+        return Text+(Te-Text)*np.exp(-(2 * np.pi * r *x/ (mdot * cp * R_propre)))
+
+    def T(Nx,Nt):
+        T = np.zeros((Nt, Nx))
+        ef = np.zeros((Nt, Nx))
+        T[0, :] = Te
+        ef[0, :] = e0
+        dx=L/Nx
+
+        for n in range(Nt):
+            T[n, 0] = Te
+            for i in range(Nx - 1):
+                Rtot = R_propre + ef[n, i] / lambda_f
+                T[n, i + 1] = (
+                    T[n, i] - dx * (2 * np.pi * r / (mdot * cp * Rtot)) * (T[n, i] - Text))
+            if n==Nt-1: break
+            for i in range(Nx):
+                # Prevent overflow by limiting ef[n, i] and using a smaller dt if necessary
+                growth = dt * (k_T(T[n, i]) / lambda_f) * (e_inf - ef[n, i]) * ef[n, i]
+                # Clamp growth to avoid overflow
+                if abs(growth) > 1e-3:
+                    growth = np.sign(growth) * 1e-3
+                ef[n + 1, i] = ef[n, i] + growth
+                # Optionally, clamp ef[n + 1, i] to physical limits
+                if ef[n + 1, i] < 0:
+                    ef[n + 1, i] = 0
+                if ef[n + 1, i] > e_inf:
+                    ef[n + 1, i] = e_inf
+        return T     
+
+    def plot_T_vs_x_at_t(T,t,pas,inst):
+        """
+        Température en fonction de x pour différents instants t
+        instants : liste de fractions du temps total
+        """
+        fig = plt.figure()
+        for dx in pas:
+            Nx=int(L/dx)
+            x = np.linspace(0, L, Nx)
+            it = int(inst * (len(t) - 1))
+            plt.plot(x, T(Nx,Nt)[it, :] - 273.15, label= f"dx = {dx} m")
+        x=x = np.linspace(0, L, 1000)
+        plt.plot(x,MA(x)-273.15,label="modele analytique")
+        plt.xlabel("x (m)")
+        plt.ylabel("Température (°C)")
+        plt.title("Température T(x) ")
+        plt.legend()
+        plt.grid()
+        save_figure('sensibilite_dx', fig, show=SHOW_PLOTS, pad_inches=0)
+
+    instants_t = [0.0]
+    pas=[2,1,0.5,0.1,0.05,0.01,0.005,0.001]
+    # fractions du temps total
+    plot_T_vs_x_at_t(T,t,pas, 0)
 
 def power(N, m, Cp, Tf, Ti):
     return N*m*Cp*(Tf-Ti)
@@ -580,6 +642,7 @@ def cost_pump(n, v, m):
 def simulation():
     
     # Parameters
+    L = 3.1                   # [m]
     Rp = 5e-4                 # [m^2 * K / W]
     lamb_f = 0.6              # [W/m/K]
     r = 6e-3                  # [m]
@@ -590,8 +653,8 @@ def simulation():
     Text = 35 + 273.15        # [K]
     E = 40000                 # [J/mol]
     R = 8.314                 # [J/(mol * K)]
-    k25 = 1100                # [m/s]
-    e_inf = 200e-6            # [m]
+    k25 = 1100                # [W/m^2/K/s]
+    e_inf = 200e-6            # [m]       
 
     # Initial conditions
     T0 = 17 + 273.15         # [K]
@@ -603,6 +666,7 @@ def simulation():
     plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     plot_eXt_eXx(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     plot_TXt_TXx(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
+    plot_T_x_t(L, r, m, Cp, T0, Text, Rp, lamb_f, e_inf, e0, k25, E, R)
 
 
 # def cases():
