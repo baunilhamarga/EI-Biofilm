@@ -260,9 +260,8 @@ def plote3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     x, t = np.meshgrid(x, t)
 
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    ax.plot_surface(t, x, e, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+    ax.plot_surface(t, x, e, cmap=cm.coolwarm, linewidth=0, antialiased=False, elev=90, azim=0)
     ax.zaxis.set_major_locator(LinearLocator(10))
-    # A StrMethodFormatter is used automatically
     ax.zaxis.set_major_formatter('{x:.02f}')
 
     ax.set_xlabel('t (jours)')
