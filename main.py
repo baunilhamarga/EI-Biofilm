@@ -227,7 +227,7 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
         e0 = current_e0
         _, e, x, t = simulate_T_e(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
         Rb = e / (lamb_f * 1000)
-        plt.plot(t, Rb[:, int(len(x)/2)], label=fr'$e_0 = {e0}\,\mathrm{{m}}$', linewidth=thickness)
+        plt.plot(t, Rb[:, int(len(x)/2)], label=f"$e_0 = {e0 * 1e6}\,\mathrm{{\mu m}}$", linewidth=thickness)
 
     plt.ylabel(r'$R (m^2 K/kW)$')
     plt.xlabel('t (jours)')
