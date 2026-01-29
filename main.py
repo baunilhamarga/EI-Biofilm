@@ -9,7 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import argparse
 
 FIGURES_DIR = "figures"
-SHOW_PLOTS = False  # True to show plots, False to just save them
+SHOW_PLOTS = True  # True to show plots, False to just save them
 # Adjust parameters as needed in methods simulation() (toy problem) and cases() (EDF cases)
 
 def save_figure(name, fig=None, show=False, pad_inches=0):
@@ -625,11 +625,11 @@ def get_power_case2_river(T0, e0,n, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf
 
 # Get the power of the case 3
 def get_power_case3(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density, water):
-    if water == 'mer':
+    if water == 'mer' or water == 'sea':
         n_pipes = 699
         frequency = 2 * (density/365)
         n_groups = 12
-    if water == 'riviere':
+    if water == 'riviere' or water == 'river':
         n_pipes = 876
         frequency = 2 * (density/365)
         n_groups = 12
@@ -1049,6 +1049,11 @@ if __name__ == "__main__":
     parser.add_argument("--simulation", action="store_true", help="Run simulation only")
     parser.add_argument("--cases", action="store_true", help="Run cases only")
     args = parser.parse_args()
+    parser.add_argument("--no_show", action="store_true", help="Do not display plots")
+    args = parser.parse_args()
+
+    if args.no_show:
+        globals()['SHOW_PLOTS'] = False
 
     run_simulation = args.simulation or (not args.simulation and not args.cases)
     run_cases = args.cases or (not args.simulation and not args.cases)
