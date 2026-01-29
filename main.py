@@ -83,7 +83,7 @@ def plot_e_x(e, t, x):
 
     for i in range(len(percentages)):
         plt.plot(x[1:], e[int(len(t)*percentages[i]), 1:], label=f'{days[i]} jours', linewidth=thickness)
-    plt.ylabel(r'$e (\mu m)$')
+    plt.ylabel(r'$e\,(\mu \text{m})$')
     plt.xlabel('x (m)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
@@ -99,7 +99,7 @@ def plot_e_t(e, t, x):
 
     for i in range(len(percentages)):
         plt.plot(t, e[:, int(len(x) * percentages[i])], label=f'{percent[i]}%', linewidth=thickness)
-    plt.ylabel(r'$e (\mu m)$')
+    plt.ylabel(r'$e\,(\mu \text{m})$')
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
@@ -115,7 +115,7 @@ def plot_T_x(T, t, x):
 
     for i in range(len(percentages)):
         plt.plot(x[1:], T[int(len(t)*percentages[i]), 1:] - 273.15, label=f'{days[i]} jours', linewidth=thickness)
-    plt.ylabel(r'T $^oC$')
+    plt.ylabel(r'$\text{T}\,(^o\text{C})$')
     plt.xlabel('x (m)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
@@ -125,13 +125,13 @@ def plot_T_x(T, t, x):
 # Plots e in function of time for fixed percentages of total lenght of the pipe
 def plot_T_t(T, t, x):
     thickness = 2
-
+    
     percentages = [1e-3, 0.25, 0.5, 0.75, 0.99]
     percent = [1e-3, 25, 50, 75, 100]
 
     for i in range(len(percentages)):
         plt.plot(t[1:], T[1:, int(len(x) * percentages[i])] - 273.15, label=f'{percent[i]}%', linewidth=thickness)
-    plt.ylabel(r'T $^oC$')
+    plt.ylabel(r'$\text{T}\,(^o\text{C})$')
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
@@ -189,7 +189,6 @@ def plot_T_different_dx(T,t,pas,L,Th,Te,r,m,cp,Rp,Nt,lambda_f,e0,dt,E,R,k25,e_in
     plt.plot(x,MA(x,Th,Te,r,m,cp,Rp)-273.15,label="modele analytique")
     plt.xlabel("x (m)")
     plt.ylabel("Température (°C)")
-    plt.title("Température T(x) ")
     plt.legend()
     plt.grid()
     save_figure('plot_T_different_dx', show=SHOW_PLOTS)
@@ -206,7 +205,7 @@ def plot_sensibility(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_ma
         x, t = np.meshgrid(x, t)
         plt.plot(t_plot[1:], T[1:, -1] - 273.15, label=f'{density} points', linewidth=thickness)
 
-    plt.ylabel(r'$T_f \> (°C)$')
+    plt.ylabel(r'$T_f\,(^o\text{C})$')
     plt.xlabel('t (jours)')
     plt.legend(loc='best', fontsize="8")
     plt.grid()
@@ -233,7 +232,7 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
         Rb = e/(lamb_f * 1000)
         plt.plot(t, Rb[:, int(len(x)/2)], label=fr'$k25 = {k25}\,\mathrm{{W/m^2/K/s}}$', linewidth=thickness)
 
-    plt.ylabel(r'$R (m^2 K/kW)$')
+    plt.ylabel(r'$R_f\,(m^2 K/kW)$')
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
@@ -250,7 +249,7 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
         Rb = e/(lamb_f * 1000)
         plt.plot(t, Rb[:, int(len(x)/2)], label=fr'$E = {E}\,\mathrm{{J/mol}}$', linewidth=thickness)
 
-    plt.ylabel(r'$R (m^2 K/kW)$')
+    plt.ylabel(r'$R_f\,(m^2 K/kW)$')
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
@@ -268,7 +267,7 @@ def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
         Rb = e / (lamb_f * 1000)
         plt.plot(t, Rb[:, int(len(x)/2)], label=fr"$e_0 = {e0 * 1e6}\,\mathrm{{\mu m}}$", linewidth=thickness)
 
-    plt.ylabel(r'$R (m^2 K/kW)$')
+    plt.ylabel(r'$R_f\,(m^2 K/kW)$')
     plt.xlabel('t (jours)')
     plt.legend(loc='center left', fontsize="8")
     plt.grid()
@@ -361,7 +360,6 @@ def plot_T_x_t(L, r, mdot, cp, Te, Text, R_propre, lambda_f, e_inf, e0, k25, E, 
         plt.plot(x,MA(x)-273.15,label="modele analytique")
         plt.xlabel("x (m)")
         plt.ylabel("Température (°C)")
-        plt.title("Température T(x) ")
         plt.legend()
         plt.grid()
         save_figure('sensibilite_dx', fig, show=SHOW_PLOTS, pad_inches=0)
@@ -392,9 +390,8 @@ def plot_lastT_for_different_m(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e
     elif water == 'river':
         plt.axhline(30, linestyle='dashed') #Tmax=30
 
-    plt.ylabel(r'$T_s \> (ºC)$')
+    plt.ylabel(r'$T_s \> (°C)$')
     plt.xlabel('t (jours)')
-    plt.title("La temperature de sortie pour differents debits")
     plt.legend(loc='best', fontsize="8")
     plt.grid()
     save_figure('plot_lastT_for_different_m', show=SHOW_PLOTS)
@@ -892,7 +889,6 @@ def cases():
     plt.contourf(N_grid, M_grid, Nc, levels=20)
     plt.xlabel("Nombre de tubes n")
     plt.ylabel("Débit massique ṁ [kg/s]")
-    plt.title("nombre de nettoyages en fonction de ṁ et n")
     plt.colorbar(label="M")
     save_figure('nombre_de_nettoyages', show=SHOW_PLOTS)
     
@@ -916,6 +912,7 @@ def cases():
         P.append(p[-1])
     plt.ylabel('Puissance en MW')
     plt.xlabel('nombre de tubes')
+    plt.grid()
     plt.plot(N,P)
     save_figure('puissance_vs_nombre_de_tubes', show=SHOW_PLOTS)
 
@@ -996,7 +993,6 @@ def cases():
     plt.contourf(N_grid, M_grid, Nc, levels=20)
     plt.xlabel("Nombre de tubes n")
     plt.ylabel("Débit massique ṁ [kg/s]")
-    plt.title("nombre de nettoyages en fonction de ṁ et n")
     plt.colorbar(label="M")
     save_figure('nombre_de_nettoyages_river', show=SHOW_PLOTS)
     
@@ -1020,6 +1016,7 @@ def cases():
         P.append(p[-1])
     plt.ylabel('Puissance en MW')
     plt.xlabel('nombre de tubes')
+    plt.grid()
     plt.plot(N,P)
     save_figure('puissance_vs_nombre_de_tubes_river', show=SHOW_PLOTS)
 
