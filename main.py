@@ -245,7 +245,6 @@ def plotT3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
     ax.plot_surface(t, x, T - 273.15, cmap=cm.coolwarm, linewidth=0, antialiased=False)
     ax.zaxis.set_major_locator(LinearLocator(10))
-    # A StrMethodFormatter is used automatically
     ax.zaxis.set_major_formatter('{x:.02f}')
 
     ax.set_xlabel('t (jours)')
@@ -262,8 +261,8 @@ def plote3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
 
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
     ax.plot_surface(t, x, e, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+    ax.view_init(elev=45, azim=-135)
     ax.zaxis.set_major_locator(LinearLocator(10))
-    # A StrMethodFormatter is used automatically
     ax.zaxis.set_major_formatter('{x:.02f}')
 
     ax.set_xlabel('t (jours)')
@@ -334,8 +333,8 @@ def plot_T_x_t(L, r, mdot, cp, Te, Text, R_propre, lambda_f, e_inf, e0, k25, E, 
     # fractions du temps total
     plot_T_vs_x_at_t(T,t,pas, 0)
 
-def power(N, m, Cp, Tf, Ti):
-    return N*m*Cp*(Tf-Ti)
+def power(N, m, Cp, Text, T):
+    return N*m*Cp*(Text - T)
 
 
 # Plots the temperature of the output of the pipes through time to different values of m
