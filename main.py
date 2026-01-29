@@ -6,16 +6,18 @@ from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 import os
 from mpl_toolkits.mplot3d import Axes3D
+import argparse
 
 FIGURES_DIR = "figures"
-SHOW_PLOTS = False
-
+SHOW_PLOTS = False  # True to show plots, False to just save them
+# Adjust parameters as needed in methods simulation() (toy problem) and cases() (EDF cases)
 
 def save_figure(name, fig=None, show=False, pad_inches=0):
     os.makedirs(FIGURES_DIR, exist_ok=True)
     if fig is None:
         fig = plt.gcf()
     fig.savefig(os.path.join(FIGURES_DIR, f"{name}.pdf"), bbox_inches="tight", pad_inches=pad_inches)
+    print(f"Figure enregistrée : {os.path.join(FIGURES_DIR, f'{name}.pdf')}")
     if show:
         plt.show()
     else:
@@ -151,6 +153,46 @@ def plot_TXt_TXx(T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max = 3
     plot_T_t(T, t, x)
     plot_T_x(T, t, x)
 
+# solution analytique
+def MA(x,Th,Te,r,m,cp,Rp):
+    return Th+(Te-Th)*np.exp(-(2 * np.pi * r *x/ (m * cp * Rp)))
+def T(Nx,Nt,L,lambda_f,r,m,cp,Th,Rp,Te,e0,dt,E,R,k25,e_inf):
+    T = np.zeros((Nt, Nx))
+    ef = np.zeros((Nt, Nx))
+    T[0, :] = Te
+    ef[0, :] = e0
+    dx=L/Nx
+
+    for n in range(Nt):
+        T[n, 0] = Te
+        for i in range(Nx - 1):
+            Rtot = Rp + ef[n, i] / lambda_f
+            T[n, i + 1] = (
+                T[n, i] - dx * (2 * np.pi * r / (m * cp * Rtot)) * (T[n, i] - Th))
+        if n==Nt-1: break
+        for i in range(Nx):
+            ef[n + 1, i] = (
+                ef[n, i]+ dt * (k(T[n, i],E,R,k25) / lambda_f)* (e_inf - ef[n, i]) * ef[n, i])
+    return T 
+
+def plot_T_different_dx(T,t,pas,L,Th,Te,r,m,cp,Rp,Nt,lambda_f,e0,dt,E,R,k25,e_inf):
+    """
+    Température en fonction de x pour différents pas dx 
+    """
+    plt.figure()
+    for dx in pas:
+        Nx=int(L/dx)
+        x = np.linspace(0, L, Nx)
+        it = int(0 * (len(t) - 1))
+        plt.plot(x, T(Nx,Nt,L,lambda_f,r,m,cp,Th,Rp,Te,e0,dt,E,R,k25,e_inf)[it, :] - 273.15, label= f"dx = {dx} m")
+    x=x = np.linspace(0, L, 1000)
+    plt.plot(x,MA(x,Th,Te,r,m,cp,Rp)-273.15,label="modele analytique")
+    plt.xlabel("x (m)")
+    plt.ylabel("Température (°C)")
+    plt.title("Température T(x) ")
+    plt.legend()
+    plt.grid()
+    save_figure('plot_T_different_dx', show=SHOW_PLOTS)
 
 # Give different plots of e in function of x in the last instant of time for different
 # numbers of points to use in simulation
@@ -174,14 +216,10 @@ def plot_sensibility(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_ma
 # Plots de experimental data in addition to our model varying the
 # parameters k25 and E
 def plot_nebot(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf):
-    # Nebot data
-    R_nebot_file = open('r_nebot.txt', 'r')
-    R_nebot = list(R_nebot_file.read().split('\n'))
-    for i in range(len(R_nebot)): R_nebot[i] = float(R_nebot[i])
+# Nebot data (hardcoded)
+    R_nebot = [0.190481, 0.761924, 1.33337, 1.71433, 2.2873, 3.05379, 3.82334, 4.76812, 5.91863, 7.06304, 7.82648, 8.97089, 9.93244, 11.0769, 12.0323, 13.3687, 14.1474, 14.9078, 15.877, 17.3963, 17.9799, 19.1197, 20.0767, 20.0797, 21.0428, 21.9967, 23.1335, 23.9016, 25.0444, 26.1843, 26.9477, 28.0921, 29.0522, 30.2011, 31.1505, 31.917, 34.2043, 34.983, 35.9262, 37.2688, 38.0413, 38.9831, 39.9507, 40.9108, 42.3965, 43.352, 44.1215, 44.6868, 46.4073, 47.1585, 47.7589, 49.0816, 50.2367, 51.1876, 52.1354, 52.8852, 53.8467, 54.9911, 56.1157, 56.8853, 57.9961, 58.9333]
 
-    time_nebot_file = open('time_nebot.txt', 'r')
-    time_nebot = list(time_nebot_file.read().split('\n'))
-    for i in range(len(time_nebot)): time_nebot[i] = float(time_nebot[i])
+    time_nebot = [1.26987e-05, 5.07949e-05, 8.88911e-05, 0.000114289, 0.00415249, 0.0162036, 0.0362549, 0.0163179, 0.0363946, 0.0404709, 0.0445218, 0.0485981, 0.0726622, 0.0767385, 0.0848022, 0.0928912, 0.136943, 0.132994, 0.177058, 0.16516, 0.197199, 0.189275, 0.201338, 0.209339, 0.237403, 0.241466, 0.225542, 0.241593, 0.24167, 0.233746, 0.237797, 0.241873, 0.261937, 0.278013, 0.270077, 0.282128, 0.28628, 0.330332, 0.306395, 0.330485, 0.358536, 0.330599, 0.370663, 0.390727, 0.290826, 0.29889, 0.318941, 0.302979, 0.319094, 0.291144, 0.367184, 0.339272, 0.371349, 0.367413, 0.355476, 0.323526, 0.34759, 0.351666, 0.303741, 0.323792, 0.239866, 0.199929]
 
     # Nebot plot
     thickness = 2
@@ -347,22 +385,23 @@ def plot_lastT_for_different_m(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e
         T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
         plt.plot(t[1:], T[1:, -1] - 273.15, label=f'm = {m:.2f} kg/s', linewidth=thickness)
         Tf = T[-1, -1] - 273.15
-        print(f'm = {m}, Tf = {Tf}')
+        
 
     if water == 'sea':
-        plt.axhline(27, linestyle='dashed')
+        plt.axhline(27, linestyle='dashed') #Tmax=27
     elif water == 'river':
-        plt.axhline(30, linestyle='dashed')
+        plt.axhline(30, linestyle='dashed') #Tmax=30
 
-    plt.ylabel(r'$T_f \> (ºC))$')
+    plt.ylabel(r'$T_s \> (ºC)$')
     plt.xlabel('t (jours)')
+    plt.title("La temperature de sortie pour differents debits")
     plt.legend(loc='best', fontsize="8")
     plt.grid()
     save_figure('plot_lastT_for_different_m', show=SHOW_PLOTS)
 
 
-# Get the power of the case 1 to sea scenario
-def get_power_case1_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density,):
+# Get the power of the case 0 to sea scenario
+def get_power_case0_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density,):
     T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
     t = t[1:]
     Tf = T[1:, -1] - 273.15
@@ -371,28 +410,187 @@ def get_power_case1_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x
     Ti = T0 - 273.15
     
     for i in range(len(t)):
-        p.append(power(679, m, Cp, Tf[i], Ti) * pow(10, -6))
+        p.append(power(616, m, Cp, Tf[i], Ti) * pow(10, -6))
 
     return p, t
+
+
+# Get the power of the case 1 to sea scenario
+#calcul le cout annuel de biocide pour un débit donné Dm
+def annual_biocide_total_cost(m_dot,N_tube,price_per_kg=1.0,dosage=5e-6,time_per_year = 30*3600*365):
+    return m_dot * time_per_year * dosage * price_per_kg * N_tube
+
+#Calcul la puissance d'un tube 
+def tube_power_biocide(
+    m,
+    *,
+    T0, Rp, lamb_f, r, Cp, Text, x_max,
+    t_max_short=2, density=1000,
+    e0=2e-6, E=40e3, R=8.314, k25=1100, e_inf=200e-6,
+    plot=False,
+    plot_profile=False,
+    title_prefix=""
+):
+   
+    
+    T, e, _, t = simulate_T_e(
+        T0, e0, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf,
+        x_max, t_max_short, density
+    )
+
+    # Température de sortie (dernier point spatial)
+    Tf = T[-1, -1]
+    Ti = T0
+
+    # Puissance d'un tube (W)
+    P_tube = m * Cp * (Tf - Ti)
+
+
+    return P_tube, Tf, t, T
+
+def plot_N_vs_m_biocide(*,scenario="sea", m_min=0.4, m_max=0.8, n_points=21,T0=290.15, Rp=0.0, lamb_f=0.6, r=0.01, Cp=4180.0, Text=320.15, x_max=10.0,
+    t_max_short=365, density=1000,
+    # paramètres biofilm / biocide
+    e0=5e-6, E=40e3, R=8.314, k25=1100, e_inf=100e-6,
+    # objectif
+    P_target=20e6,
+    filename="N_vs_m_biocide.png"
+):
+    """
+    Calcule N(m)=ceil(P_target/P_tube(m)) avec le modèle biocide,
+    trace N en fonction de m
+    """
+
+    # 1) grille de débits
+    m_list = np.linspace(m_min, m_max, n_points)
+
+    # 2) calcul N(m)
+    N_list = []
+    for m in m_list:
+        P_tube, Tf, _, _ = tube_power_biocide(m,
+            T0=T0, Rp=Rp, lamb_f=lamb_f, r=r, Cp=Cp, Text=Text, x_max=x_max,
+            t_max_short=t_max_short, density=density,
+            e0=e0, E=E, R=R, k25=k25, e_inf=e_inf,
+            plot=False, plot_profile=False
+        )
+
+        if P_tube <= 0:
+            N_list.append(np.nan)
+        else:
+            N_list.append(math.ceil(P_target / P_tube))
+
+    N_list = np.array(N_list)
+
+    # 3) choix du débit selon scénario
+    scenario = scenario.lower().strip()
+    if scenario == "sea":
+        m_choice = m_max
+    elif scenario == "river":
+        m_choice = m_min
+    else:
+        raise ValueError('scenario doit être "sea" ou "river"')
+
+    idx = np.argmin(np.abs(m_list - m_choice))
+    N_choice = N_list[idx]
+
+    # 4) plot N(m)
+    plt.figure()
+    plt.plot(m_list, N_list, marker="o")
+    plt.scatter([m_list[idx]], [N_choice], s=80)
+    plt.xlabel("Débit massique par tube m (kg/s)")
+    plt.ylabel("Nombre de tubes requis N")
+    plt.grid()
+    name, _ = os.path.splitext(filename)
+    save_figure(name, show=SHOW_PLOTS)
+
+    # 5) résultat final uniquement
+    print(f"Résultat final ({scenario}) :")
+    print(f"  Débit retenu m = {m_list[idx]:.3f} kg/s")
+    print(f"  Nombre de tubes requis N = {N_choice}")
+    print(f"Température de sortie associée Tf = {Tf - 273.15:.2f} °C")
+
+
+    return m_list[idx], N_choice
+
+#Trace la puissance P(t) produite par UN tube traité au biocide
+def plot_power_vs_time_biocide(*,m,T0, Rp, lamb_f, r, Cp, Text, x_max,
+    t_max=360, density=1000,
+    e0=2e-6, E=40e3, R=8.314, k25=1100, e_inf=100e-6,
+    filename="Power_vs_time.pdf"):
+
+    T, e, x, t = simulate_T_e(
+        T0, e0, Rp, lamb_f, r, m, Cp, Text,
+        E, R, k25, e_inf,
+        x_max=x_max, t_max=t_max, density=density
+    )
+
+    Tf_t = T[:, -1]                 # température de sortie
+    P_t = m * Cp * (Tf_t - T0)      # puissance (W)
+
+    plt.figure()
+    plt.plot(t, P_t / 1e3)
+    plt.xlabel("Temps (jours)")
+    plt.ylabel("Puissance par tube (kW)")
+    plt.grid()
+
+    name, _ = os.path.splitext(filename)
+    save_figure(name, show=SHOW_PLOTS)
+
+    return t, P_t
+
+t, P_t = plot_power_vs_time_biocide(
+    m=0.8,
+    T0=12+273.15, Rp=5e-4, lamb_f=0.6, r=0.02, Cp=4184,
+    Text=60+273.15, x_max=10,
+    t_max=365,
+    e0=2e-6, E=40e3, R=8.314, k25=1100, e_inf=100e-6,
+    filename="Power_vs_time_biocide_sea.pdf")
+
+t, P_t = plot_power_vs_time_biocide(
+    m=0.4,
+    T0=25+273.15, Rp=5e-4, lamb_f=0.6, r=0.02, Cp=4184,
+    Text=60+273.15, x_max=10,
+    t_max=365,
+    e0=2e-6, E=40e3, R=8.314, k25=1100, e_inf=100e-6,
+    filename="Power_vs_time_biocide_river.pdf")
 
 
 # Get the power of the case 2 to sea scenario
-def get_power_case2_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
+def get_power_case2_sea(T0, e0,n,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
     T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
     t = t[1:]
     Tf = T[1:, -1] - 273.15
-    p = []
 
+    p = []
     Ti = T0 - 273.15
+    cleaning = False
+    n_cleans = 0
+    for i in range(len(t)):
+        current_power = power(n, m, Cp, Tf[i], Ti) * pow(10, -6)
+        if current_power <= 20 and not cleaning:
+            cleaning = True
+            Ti_cleaning = t[i]
+            n_cleans += 1
+
+        if cleaning == True:
+            current_power = 20
+
+        if cleaning: 
+            if t[i] - Ti_cleaning >= 1:
+                cleaning = False
+                j = i
+                while j != len(Tf):
+                    Tf[j] = Tf[j-i]
+                    j += 1
+
+        p.append(current_power)
+
     
-    for i in range(len(t)):
-        p.append(power(510, m, Cp, Tf[i], Ti) * pow(10, -6))
-
-    return p, t
+    return p, t,n_cleans
 
 
-# Get the power of the case 3 to sea scenario
-def get_power_case3_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
+# Get the power of the case 2 to river scenario
+def get_power_case2_river(T0, e0,n, Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
     T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
     t = t[1:]
     Tf = T[1:, -1] - 273.15
@@ -402,14 +600,14 @@ def get_power_case3_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x
     cleaning = False
     n_cleans = 0
     for i in range(len(t)):
-        current_power = power(550, m, Cp, Tf[i], Ti) * pow(10, -6)
-        if current_power <= 22 and not cleaning:
+        current_power = power(n, m, Cp, Tf[i], Ti) * pow(10, -6)
+        if current_power <= 20 and not cleaning:
             cleaning = True
             Ti_cleaning = t[i]
             n_cleans += 1
 
         if cleaning == True:
-            current_power = 22
+            current_power = 20
 
         if cleaning: 
             if t[i] - Ti_cleaning >= 1:
@@ -421,56 +619,20 @@ def get_power_case3_sea(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x
 
         p.append(current_power)
 
-    print(f'Number of cleans: {n_cleans}')
-
-    return p, t
-
-
-# Get the power of the case 3 to river scenario
-def get_power_case3_river(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
-    T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
-    t = t[1:]
-    Tf = T[1:, -1] - 273.15
-
-    p = []
-    Ti = T0 - 273.15
-    cleaning = False
-    n_cleans = 0
-    for i in range(len(t)):
-        current_power = power(760, m, Cp, Tf[i], Ti) * pow(10, -6)
-        if current_power <= 22 and not cleaning:
-            cleaning = True
-            Ti_cleaning = t[i]
-            n_cleans += 1
-
-        if cleaning == True:
-            current_power = 22
-
-        if cleaning: 
-            if t[i] - Ti_cleaning >= 1:
-                cleaning = False
-                j = i
-                while j != len(Tf):
-                    Tf[j] = Tf[j-i]
-                    j += 1
-
-        p.append(current_power)
-
-    print(f'Number of cleans: {n_cleans}')
-
-    return p, t
+    
+    return p, t, n_cleans
 
 
-# Get the power of the case 4
-def get_power_case4(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density, water):
-    if water == 'sea':
-        n_pipes = 550
+# Get the power of the case 3
+def get_power_case3(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density, water):
+    if water == 'mer':
+        n_pipes = 699
         frequency = 2 * (density/365)
-        n_groups = 11
-    if water == 'river':
-        n_pipes = 760
+        n_groups = 12
+    if water == 'riviere':
+        n_pipes = 876
         frequency = 2 * (density/365)
-        n_groups = 15
+        n_groups = 12
     
     Tfs = []
     Ti_cleaning = []
@@ -516,13 +678,24 @@ def get_power_case4(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max
         p.append(current_power)
         j += 1
 
-    print(f'Number of cleans: {n_cleans}')
+    print(f'Nonmbre de nettoyages: {n_cleans}')
 
     return p, t
+# get the power of the case 4
+def get_power_case4(n,T0,e0,Rp,lamb_f,r,m,Cp,Text,E,R,k25,e_inf,x_max,t_max,density):
+    T,_,_,t=simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
+    t = t[1:]
+    Tf = T[1:, -1] - 273.15
+    p = []
 
+    Ti = T0 - 273.15
+    
+    for i in range(len(t)):
+        p.append(power(n, m, Cp, Tf[i], Ti) * pow(10, -6))
 
-# Get the power of the case 1 to river scenario
-def get_power_case1_river(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
+    return p, t
+# Get the power of the case 0 to river scenario
+def get_power_case0_river(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
     T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
     t = t[1:]
     Tf = T[1:, -1] - 273.15
@@ -531,24 +704,10 @@ def get_power_case1_river(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf,
     Ti = T0 - 273.15
     
     for i in range(len(t)):
-        p.append(power(933, m, Cp, Tf[i], Ti) * pow(10, -6))
+        p.append(power(850, m, Cp, Tf[i], Ti) * pow(10, -6))
 
     return p, t
 
-
-# Get the power of the case 2 to river scenario
-def get_power_case2_river(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
-    T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
-    t = t[1:]
-    Tf = T[1:, -1] - 273.15
-    p = []
-
-    Ti = T0 - 273.15
-    
-    for i in range(len(t)):
-        p.append(power(700, m, Cp, Tf[i], Ti) * pow(10, -6))
-
-    return p, t
 
 
 # Plots the power over time
@@ -556,73 +715,11 @@ def plot_powerXt(p, t):
     thickness = 2
 
     plt.plot(t, p, linewidth=thickness)
-    plt.axhline(22, color='red', linestyle='dashed')
+    
     plt.ylabel(r'$Puissance \> (MW)$')
     plt.xlabel('t (jours)')
     plt.grid()
     save_figure('plot_powerXt', show=SHOW_PLOTS)
-
-
-# Plots the temperature of the output of the pipes through time to different values of e_inf
-def plot_lastT_diferent_einf(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
-    thickness = 2
-
-    percentages = [1, 0.3]
-    for percentage in percentages:
-        T, _, x, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
-        t_plot = t
-        x, t = np.meshgrid(x, t)
-        percentage_to_plot = percentage * 100
-        plt.plot(t_plot[1:], T[1:, -1] - 273.15, label=f'{percentage_to_plot}% de e_inf', linewidth=thickness)
-        Tf = T[-1, -1]-273.15
-        print(f'Percentage = {percentage}, Tf = {Tf}, m = {m}')
-
-    plt.ylabel(r'$T_f \> (ºC)$')
-    plt.xlabel('t (jours)')
-    plt.legend(loc='best', fontsize="8")
-    plt.grid()
-    save_figure('plot_lastT_diferent_einf', show=SHOW_PLOTS)
-
-
-def plot_power_npipes(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
-    T, _, _, t = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
-    t = t[1:]
-    Tf = T[1:, -1] - 273.15
-    thickness = 2
-
-    Ti = T0 - 273.15
-    n_list = np.arange(600, 1000, int((1000-600)/10))
-    p = []
-    for current_n in n_list:
-        for i in range(len(t)):
-            p.append(power(current_n, m, Cp, Tf[i], Ti) * pow(10, -6))
-        plt.plot(t, p, linewidth=thickness, label = f'{current_n} tuyaux')
-        print(f'{current_n} tuyaux: Pmax = {p[0]}, Pmin = {p[-1]}')
-        p = []
-
-    plt.axhline(22, color='red', linestyle='dashed')
-    plt.ylabel(r'$Puissance \> (MW)$')
-    plt.xlabel('t (jours)')
-    plt.legend(loc='best', fontsize="8")
-    plt.grid()
-    save_figure('plot_power_npipes', show=SHOW_PLOTS)
-
-
-def case1_npipesXm(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density):
-    m_list = np.arange(0.4, 0.8, (0.8-0.45)/10)
-    n_tubes = []
-    for current_m in m_list:
-        m = current_m
-        T, _, _, _ = simulate_T_e(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf, x_max, t_max, density)
-        Ti = T0 - 273.15
-        Tf = T[-1, -1] - 273.15
-        n_tubes.append((22*pow(10, 6)) / (current_m*Cp*(Tf - Ti)))
-
-    plt.ylabel(r'$\text{N tuyaux}$')
-    plt.xlabel(r'$\dot{m} \> kg/s$')
-    plt.plot(m_list, n_tubes)
-    plt.grid()
-    save_figure('case1_npipesXm', show=SHOW_PLOTS)
 
 
 def cost_pump(n, v, m):
@@ -636,12 +733,53 @@ def cost_pump(n, v, m):
     d = pow(v, 2) * rho / 2
     e_ = 0.3164 * pow((rho * Dm * v / mu), (-0.25))
     return (a*b*c*d*e_)
+    
 
+# Coût annuel de pompage (mdot = débit massique PAR TUBE)
+def pumping_cost(
+    mdot,          # [kg/s] PAR TUBE (pas total)
+    N,             # nombre de tubes
+    L,             # longueur d'un tube [m]
+    D,             # diamètre intérieur [m]
+    eta_pump=0.7,  # rendement pompe
+    t_days=365,    # jours de fonctionnement par an
+):
+    # Constantes eau
+    rho = 1000.0       # kg/m3
+    mu = 1.0e-3        # Pa.s
+    C_energy = 130e-6  # €/Wh
+
+    # Débit volumique par tube
+    Vdot_tube = mdot / rho  # m3/s
+
+    # Section d'un tube
+    A = math.pi * D**2 / 4
+
+    # Vitesse moyenne dans un tube
+    v = Vdot_tube / A
+
+    # Débit volumique total (tous les tubes)
+    Vdot_tot = Vdot_tube * N
+
+    # facteur de friction
+    Re = rho * D * v / mu
+    f = 0.3164 * (Re ** (-0.25)) 
+
+    # Perte de charge d'un tube
+    dP = f * (L / D) * (rho * v**2 / 2)
+
+    # Puissance électrique
+    P_elec = (Vdot_tot * dP) / eta_pump  # W
+
+    # Coût annuel
+    C_pump = P_elec * (t_days * 24) * C_energy
+
+    return C_pump
+    
 
 def simulation():
     
     # Parameters
-    L = 3.1                   # [m]
     Rp = 5e-4                 # [m^2 * K / W]
     lamb_f = 0.6              # [W/m/K]
     r = 6e-3                  # [m]
@@ -652,13 +790,13 @@ def simulation():
     Text = 35 + 273.15        # [K]
     E = 40000                 # [J/mol]
     R = 8.314                 # [J/(mol * K)]
-    k25 = 1100                # [W/m^2/K/s]
-    e_inf = 200e-6            # [m]       
-
+    k25 = 1100                # [m/s]
+    e_inf = 200e-6            # [m]
+    L=10                       #[m]
     # Initial conditions
     T0 = 17 + 273.15         # [K]
     e0 = 0.01 * e_inf        # [m]
-
+    
     plotT3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     plote3D(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     plot_sensibility(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
@@ -667,75 +805,256 @@ def simulation():
     plot_TXt_TXx(T0, e0,  Rp, lamb_f, r, m, Cp, Text, E, R, k25, e_inf)
     plot_T_x_t(L, r, m, Cp, T0, Text, Rp, lamb_f, e_inf, e0, k25, E, R)
 
+    pas=[2,1,0.5,0.1,0.05,0.01,0.005,0.001]
+    Nt = 1000
+    dt = 30 / 1000
+    t = np.arange(0, Nt * dt, dt)
+  
+    plot_T_different_dx(T, t, pas, L, Text, T0, r, m, Cp, Rp, Nt, lamb_f, e0, dt, E, R, k25, e_inf)
 
-# def cases():
-#     # Contants
-#     Dm = 0.02                    # [m]
-#     x_max = 10                   # [m]
-#     Th = 60 + 273.15             # [K]
-#     Cp = 4184                    # [J/kg/K]
-#     lamb = 0.6                   # [W/m/K]
-#     Rp = 5e-4                    # [m^2 * K / W]
-#     Ea = 40000                   # [J/mol]
-#     Rg = 8.314                   # [J/(mol * K)]
-#     k25 = 1100                   # [W/m^2/K/s]
-#     Ar = (math.pi * pow(Dm, 2)) /4
-#     e_inf = 200e-6
-#     t_max = 365
-#     e0 = 0.01*e_inf
 
-#     # Parameters sea
-#     m = 0.8
-#     T0 = 12 + 273.15
-#     v = m/(1000 * Ar)
+def cases():
+#     # Constantes
+    Dm = 0.02                    # [m]
+    x_max = 10                   # [m]
+    Th = 60 + 273.15             # [K]
+    Cp = 4184                    # [J/kg/K]
+    lamb = 0.6                   # [W/m/K]
+    Rp = 5e-4                    # [m^2 * K / W]
+    Ea = 40000                   # [J/mol]
+    Rg = 8.314                   # [J/(mol * K)]
+    k25 = 1100                   # [W/m^2/K/s]
+    Ar = (math.pi * pow(Dm, 2)) /4
+    e_inf = 200e-6
+    t_max = 365
+    e0 = 0.01*e_inf
+    N=[550,600,800,1000,1200,1600,2000]
+    m=0.8
+    n = N[0]
+    c=80e-6
+    Rc=4e-4
+
+
+    # Parameteres pour la mer
+    M =[0.4,0.5,0.6,0.65,0.7,0.75,0.8]
+    T0 = 12 + 273.15
+   
     
-#     #print('-------Seawater----------')
-#     # Case 1 679
-#     plot_lastT_for_different_m(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 300, 'sea')
-#     p, t = get_power_case1_sea(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 1000)
-#     plot_powerXt(p, t)
-#     case1_npipesXm(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 300)
+    print('-------eau de mer----------')
+#     Case 0
+    plot_lastT_for_different_m(T0, e0, Rp, lamb, Dm/2, m, Cp, Th, Ea, Rg, k25, e_inf, x_max, t_max, 300, 'mer')
+   
+    p, t = get_power_case0_sea(T0, e0, Rp, lamb,Dm/2,m,Cp,Th,Ea,Rg,k25, e_inf, x_max, t_max, 1000)
+    plot_powerXt(p, t)
 
-#     # Case 2 510
-#     plot_lastT_diferent_einf(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 1000)
-#     p, t = get_power_case2_sea(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf*0.3, x_max, t_max, 1000)
-#     plot_powerXt(p, t)
+#      Case 1
+    t, P_t = plot_power_vs_time_biocide(
+        m=0.8,
+        T0=12+273.15, Rp=5e-4, lamb_f=0.6, r=0.02, Cp=4184,
+        Text=60+273.15, x_max=10,
+        t_max=365,
+        e0=2e-6, E=40e3, R=8.314, k25=1100, e_inf=100e-6,
+        filename="Power_vs_time_biocide_sea.pdf")
+    
+    m_choice, N_choice = plot_N_vs_m_biocide(
+    scenario="sea",
+    T0=12+273.15, Rp=5e-4, lamb_f=0.6, r=0.02, Cp=4184,
+    Text=60+273.15, x_max=10,
+    t_max_short=365,
+    e0=5e-6, E=40e3, R=8.314, k25=1100, e_inf=100e-6,
+    P_target=20e6,
+    filename="N_vs_m_biocide_rivière.pdf"
+)
+    C = pumping_cost(
+    mdot=0.8,   # kg/s PAR TUBE
+    N=290,
+    L=10.0,
+    D=0.02,
+    eta_pump=0.7,
+    t_days=365
+)
 
-#     # Case 3: 550 pipes
-#     plot_power_npipes(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 300)
-#     p, t = get_power_case3_sea(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 300)
-#     plot_powerXt(p, t)
+    print(f"Coût annuel de pompage (eau froide) : {C:.0f} € / an")
+    
+#      Cas 2
+    
+    p,t,n= get_power_case2_sea(T0, e0, n, Rp, lamb, Dm/2, m, Cp, Th,Ea, Rg, k25, e_inf, x_max, t_max, 1000)
+    plot_powerXt(p,t)
 
-#     # Case 4: 550
-#     p, t = get_power_case4(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 365*2, 'sea')
-#     plot_powerXt(p, t)
+    "Le code suivant sert a representer le nombre de nettoyage en fonction du debit et du nombre de tubes"
+    Nc = np.zeros((len(M), len(N)))
+    for i, m in enumerate(M):
+        for j, n in enumerate(N):
+            Nc[i, j] = get_power_case2_sea(T0, e0, n, Rp, lamb, Dm/2, m, Cp, Th,Ea, Rg, k25, e_inf, x_max, t_max, 1000)[2]  # Nc en MW
+    N_grid, M_grid = np.meshgrid(N, M)
+    plt.figure()
+    plt.contourf(N_grid, M_grid, Nc, levels=20)
+    plt.xlabel("Nombre de tubes n")
+    plt.ylabel("Débit massique ṁ [kg/s]")
+    plt.title("nombre de nettoyages en fonction de ṁ et n")
+    plt.colorbar(label="M")
+    save_figure('nombre_de_nettoyages', show=SHOW_PLOTS)
+    
 
-#     #print('-------River Water----------')
-#     # Parameters river
-#     m = 0.8
-#     T0 = 25 + 273.15
-#     v = m/(1000 * Ar)
+    C2 = pumping_cost(
+    mdot=0.7,     # m3/s
+    N=600,
+    L=10.0,        # m
+    D=0.02,        # m
+    eta_pump=0.7,
+    t_days=352)
+    print(f"Coût annuel de pompage scenario 2 (mer) : {C2:.0f} € / an")
 
-#     # Case 1 933 pipes
-#     plot_lastT_for_different_m(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 365, 'river')
-#     p, t = get_power_case1_river(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 356)
-#     plot_powerXt(p, t)
+    # Cas 3
+    p, t = get_power_case3(T0, e0,  Rp, lamb, Dm/2, m, Cp, Th, Ea, Rg, k25, e_inf, x_max, t_max, 3000, 'sea')
+    plot_powerXt(p, t)
+    # cas4
+    P=[]
+    for n in N:
+        p,t=get_power_case4(n,T0,0,Rp+Rc,lamb,(Dm-c)/2,m,Cp,Th,Ea,Rg,k25,e_inf,x_max,t_max,3000)
+        P.append(p[-1])
+    plt.ylabel('Puissance en MW')
+    plt.xlabel('nombre de tubes')
+    plt.plot(N,P)
+    save_figure('puissance_vs_nombre_de_tubes', show=SHOW_PLOTS)
 
-#     # Case 2 700 pipes
-#     plot_lastT_diferent_einf(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 1000)
-#     p, t = get_power_case2_river(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf*0.3, x_max, t_max, 365)
-#     plot_powerXt(p, t)
+    C4= pumping_cost(
+    mdot=0.8,     # m3/s
+    N=678,
+    L=10.0,        # m
+    D=0.02,        # m
+    eta_pump=0.7,
+    t_days=189)
+    print(f"Coût annuel de pompage scenario 3 (mer) : {C4:.0f} € / an")
 
-#     # Case 3 760 pipes
-#     plot_power_npipes(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 300)
-#     p, t = get_power_case3_river(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 365)
-#     plot_powerXt(p, t)
+    #cas 4
 
-#     # Case 4 760 pipes
-#     p, t = get_power_case4(T0, e0, Dm, Th, Cp, lamb, Rp, Ea, Rg, k25, Ar, v, m, e_inf, x_max, t_max, 365*2, 'river')
-#     plot_powerXt(p, t)
+    C6 = pumping_cost(
+    mdot=0.4,     # m3/s
+    N=650,
+    L=10.0,        # m
+    D=0.02,        # m
+    eta_pump=0.7,
+    t_days=365)
+    print(f"Coût annuel de pompage scenario 4 (mer) : {C6:.0f} € / an")
 
+
+
+
+    print('-------eau de rivier----------')
+     # Parameters river
+    m = 0.5
+    T0 = 25 + 273.15
+    v = m/(1000 * Ar)
+    
+
+#      Case 0
+    plot_lastT_for_different_m(T0, e0, Rp, lamb, Dm/2, m, Cp, Th, Ea, Rg, k25, e_inf, x_max, t_max, 300, 'riviere')
+
+    p, t = get_power_case0_river(T0, e0,  Rp, lamb, Dm/2, m, Cp, Th, Ea, Rg, k25, e_inf, x_max, t_max, 365)
+    plot_powerXt(p, t)
+
+#     Cas 1
+    t, P_t = plot_power_vs_time_biocide(m=0.4,T0=25+273.15, Rp=5e-4, lamb_f=0.6, r=0.02, Cp=4184,Text=60+273.15, x_max=10,t_max=365,
+                                        e0=2e-6, E=40e3, R=8.314, k25=1100, e_inf=100e-6,
+                                        filename="Power_vs_time_biocide_river.pdf")
+    
+
+
+    m_choice, N_choice = plot_N_vs_m_biocide(
+    scenario="river",
+    T0=25+273.15, Rp=5e-4, lamb_f=0.6, r=0.02, Cp=4184,
+    Text=60+273.15, x_max=10,
+    t_max_short=365,
+    e0=5e-6, E=40e3, R=8.314, k25=1100, e_inf=100e-6,
+    P_target=20e6,
+    filename="N_vs_m_biocide_mer.pdf" )
+
+    C1r = pumping_cost(
+    mdot=0.4,     # m3/s
+    N=506,
+    L=10.0,        # m
+    D=0.02,        # m
+    eta_pump=0.7,
+    t_days=365)
+    print(f"Coût annuel de pompage (rivière eau chaude) : {C1r:.0f} € / an")
+
+
+#     Cas 2
+
+    p, t,nc = get_power_case2_river(T0, e0, 900, Rp, lamb, Dm/2, 0.5, Cp, Th,Ea, Rg, k25, e_inf, x_max, t_max, 1000)
+    print(nc)
+    plot_powerXt(p, t)
+    
+    Nc = np.zeros((len(M), len(N)))
+    for i, m in enumerate(M):
+        for j, n in enumerate(N):
+            Nc[i, j] = get_power_case2_river(T0, e0, n, Rp, lamb, Dm/2, m, Cp, Th,Ea, Rg, k25, e_inf, x_max, t_max, 1000)[2]  # Nc en MW
+    N_grid, M_grid = np.meshgrid(N, M)
+    plt.figure()
+    plt.contourf(N_grid, M_grid, Nc, levels=20)
+    plt.xlabel("Nombre de tubes n")
+    plt.ylabel("Débit massique ṁ [kg/s]")
+    plt.title("nombre de nettoyages en fonction de ṁ et n")
+    plt.colorbar(label="M")
+    save_figure('nombre_de_nettoyages_river', show=SHOW_PLOTS)
+    
+    C2r = pumping_cost(
+    mdot=0.5,     # m3/s
+    N=900,
+    L=10.0,        # m
+    D=0.02,        # m
+    eta_pump=0.7,
+    t_days=335)
+    print(f"Coût annuel de pompage scenario 2 (mer) : {C2r:.0f} € / an")
+
+
+    # Cas 3 
+    p, t = get_power_case3(T0, e0,  Rp, lamb, Dm/2, m, Cp, Th, Ea, Rg, k25, e_inf, x_max, t_max, 3000, 'river')
+    plot_powerXt(p, t)
+    # Cas 4
+    P=[]
+    for n in N:
+        p,t=get_power_case4(n,T0,0,Rp+Rc,lamb,(Dm-c)/2,m,Cp,Th,Ea,Rg,k25,e_inf,x_max,t_max,3000)
+        P.append(p[-1])
+    plt.ylabel('Puissance en MW')
+    plt.xlabel('nombre de tubes')
+    plt.plot(N,P)
+    save_figure('puissance_vs_nombre_de_tubes_river', show=SHOW_PLOTS)
+
+
+    C3r = pumping_cost(
+    mdot=0.5,     # m3/s
+    N=73,
+    L=10.0,        # m
+    D=0.02,        # m
+    eta_pump=0.7,
+    t_days=350)
+    print(f"Coût annuel de pompage scenario 3 (rivière) : {C3r:.0f} € / an")
+
+
+    #cas 4
+
+    C4r = pumping_cost(
+    mdot=0.4,     # m3/s
+    N=1000,
+    L=10.0,        # m
+    D=0.02,        # m
+    eta_pump=0.7,
+    t_days=350)
+    print(f"Coût annuel de pompage scenario 4 (rivière) : {C4r:.0f} € / an")
 
 if __name__ == "__main__":
-    simulation()
-    # cases()
+    parser = argparse.ArgumentParser(description="Run simulation, cases, or both")
+    parser.add_argument("--simulation", action="store_true", help="Run simulation only")
+    parser.add_argument("--cases", action="store_true", help="Run cases only")
+    args = parser.parse_args()
+
+    run_simulation = args.simulation or (not args.simulation and not args.cases)
+    run_cases = args.cases or (not args.simulation and not args.cases)
+
+    if run_simulation:
+        simulation()
+    if run_cases:
+        cases()
+    
